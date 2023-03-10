@@ -11,8 +11,6 @@ warnings.filterwarnings('ignore')
 #Import Data
 original_data = pd.read_excel('find_my_buddy.csv.xlsx', sheet_name='Buddy Sheet')
 
-#original_data = pd.read_csv("D:\\BlueThinQ\\Streamlit\\streamlit\\Roommate Bumble\\Roommate_Bumble-main\\find_my_buddy.csv", sep='|')
-#What information do we have?
 original_data = original_data.drop(labels = [ 'i20 amount', 'VISA status', 'Planned VISA interview date', 'VISA consulate - city ',
            'Do you need a Flight mate?', 'If yes, then Flight Date?',
            'Any other comments  ?', 'Email address', 'Your Decision', 'Areas of Interest (In NEU )', 'Facebook profile link (optional)'], axis = 1)
@@ -36,7 +34,6 @@ original_data = original_data.drop(labels = ['special_pref'], axis = 1)
 original_data = original_data.drop(labels=['undergrad_uni'], axis = 1)
 original_data = original_data.drop(labels = ['hobbies'], axis = 1)
 original_data = original_data.drop(labels = ['looking_for_roommate'], axis = 1)
-# original_data['cul_skills ']
 original_data = original_data.rename(columns={'cul_skills ': 'cul_skills'})
 
 #Data Cleaning
@@ -45,16 +42,11 @@ original_data = original_data.rename(columns={'cul_skills ': 'cul_skills'})
 def data_cleaning(original_data):
     # type(original_data)
     # ##print(original_data.columns)
-    #Do some of the features make any difference?
-
     # original_data
-    #Dont drop names. Keep it for recommendations later.
     #Male, Female to 0, 1
     original_data['gender'].replace(['Male','Female'], [0, 1], inplace = True)
     # original_data.columns
     #Change names to more accessible ones
-
-
 
     original_data['rent_budget'] = original_data['rent_budget'].str.replace('$', '', regex = True)
     original_data['rent_budget'] = original_data['rent_budget'].str.replace('<', '', regex = True)
@@ -81,21 +73,7 @@ def data_cleaning(original_data):
     
     
     # #3) Undergrad universities
-    # original_data['undergrad_uni'] = original_data['undergrad_uni'].str.strip().str.lower()
-    # pd.value_counts(original_data['undergrad_uni'])
-    # #Theres a lot of noise and overlap here cause people wrote their college names and university names as 2 separate entities. Trying to capture that information.
-    # mask = original_data.undergrad_uni.str.contains('mumbai')
-    # # mask
-    # new_unis = np.array(original_data['undergrad_uni'])
-    # List of universities
-    # new_unis
-    # Dataframe of observations where theres any NA value anywhere.
-    #original_data[original_data.isnull().any(axis=1)]
-    # Second most popular city after Mumbai is Bangalore
-    #original_data[original_data['current_city'] == 'bangalore']
-#     ##print("Counts of NA's in every feature:")
-    # original_data.isnull().sum()
-
+   
     #4) Open to roommates from other branch
     pd.value_counts(original_data['open_to_other_branch'])
     # Fill NA's with the most frequent value
@@ -105,16 +83,12 @@ def data_cleaning(original_data):
 
     #5) Undergrad university
     # original_data.undergrad_uni.value_counts()
-    #This feature is too messy right now cause people were allowed to manually write into this. 
-    #So too many variations for the same universities like people repeating names, using abbreviations etc.
-    #Can let go of this bias because hometown and current city capture this information already.
     
     
     original_data.isnull().sum()
 
     #6) Work experience
-    #This is crucial since this data does not contain age as a feature. Years of work experience+22(avg graduation age) can indicate age of users.
-
+   
     original_data.work_ex.value_counts()
     # Get non null values, average them and change work ex to avg work ex value
     work_ex_avg = np.average(original_data.work_ex[original_data.work_ex.notnull()])
@@ -145,36 +119,29 @@ def data_cleaning(original_data):
     original_data.isnull().sum()
 
     #8) Person Per Room
-    #Have to handle number of people per room. Hall indication is by text and all other numbers indicate number of people per room. So I've created a new binary feature indicating if a user is okay with staying in the living room or no.
-
+   
     hall_ind = 'I can stay in Hall too'
     hall_yes_no = [1 if hall_ind in str(d) else 0 for d in original_data.person_per_room]
     original_data['hall_yes_no'] = hall_yes_no
     # original_data
-    #Does creating dummy variables help?
-
+    
     pd.get_dummies(original_data.person_per_room)
-    #Too many new features. Cant do this.
 
     #Save this for further work.
-
     original_data.to_csv('original_data_2.csv')
+   
     #Start new here with semi-cleaned CSV
     original_data = pd.read_csv('original_data_2.csv', index_col=0)
     # original_data
     original_data.isnull().sum()
     
 
-    #Getting back to person per room feature.
-
-    # Taking a look at which indices contain just the hall indicator, and ##printing them. Then change it to 2 (avg)
     for ind, i in enumerate(original_data.person_per_room):
         if len(str(i).split(',')) == 1 and hall_ind in str(i):
             # ##print(ind, i)
             #original_data.set_value(ind, 'person_per_room', 2)
             original_data.at[ind, 'person_per_room']=2
-    #I've decided to change the feature to mke it easier to use. Instead of the current range of number of people, keep only max number of people. That anyway gives us the range and doesnt lead to an increase in dimensions.
-
+    
     nansss = 0
     max_ppr = []
     for d in original_data.person_per_room:
@@ -202,8 +169,9 @@ def data_cleaning(original_data):
     # Now fill NA's with avg value of maximum number of people per room.
     original_data.max_ppr = original_data.max_ppr.fillna(np.average(original_data.max_ppr[original_data.max_ppr.notnull()]))
     original_data.isnull().sum()
+    
     #9) Apartment type
-    #Create dummy variable but by hand.
+    #Create dummy variable.
 
     original_data.apt_type = original_data.apt_type.fillna('Hall, 1BHK, 2 BHK, 3BHK, 4 BHK')
     apt_types = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Hall']
@@ -222,9 +190,8 @@ def data_cleaning(original_data):
     #     except:
     #         ##print(apt_choice)
     original_data.isnull().sum()
+    
     #10) Rent budget
-    #What are peoples budgets like?
-
     original_data.rent_budget.value_counts()
     import matplotlib.pyplot as plt
     x = original_data.rent_budget.value_counts()
@@ -251,6 +218,8 @@ def data_cleaning(original_data):
         if '$1000 +' in str(bud):
                 original_data.at[ind, 'rent_budget']=1000
     # check_null()
+    
+    
     #11) Alcohol
     # original_data.alcohol.value_counts()
     original_data.alcohol = original_data.alcohol.fillna('Flexible')
@@ -259,6 +228,8 @@ def data_cleaning(original_data):
     original_data.alcohol = original_data.alcohol.replace('Strictly NO', 1)
     original_data.alcohol = original_data.alcohol.replace('Strictly Yes', 2)
     # original_data.alcohol.value_counts()
+    
+    
     #12) Smoking
     # original_data.smoking.value_counts()
     original_data.smoking = original_data.smoking.fillna('Flexible')
@@ -271,7 +242,6 @@ def data_cleaning(original_data):
     #Special preferences does not add anything new of significance at least not uniformly. So dropping it.
 
     
-    # check_null()
     #13) Food preferences
     original_data.food_pref.value_counts()
     original_data.food_pref = original_data.food_pref.fillna('Flexible (I prefer  veg or Non -veg for myself but ready to live with anyone)')
@@ -282,8 +252,9 @@ def data_cleaning(original_data):
     original_data.food_pref = original_data.food_pref.replace('Strictly Non Veg', 2)
     # original_data.food_pref.value_counts()
     # check_null()
+    
+    
     #14) Cul skills
-
     # original_data.cul_skills.value_counts()
     original_data.cul_skills = original_data.cul_skills.fillna('Sometimes')
 
@@ -303,6 +274,8 @@ def data_cleaning(original_data):
     #Drop apt_type since its an extra feature now, and hometown because we'll use just one location indicator(current_city) for now.
 
     original_data = original_data.drop(labels = ['apt_type', 'hometown'], axis = 1)
+    
+    
     #15) Current City
     original_data.current_city.value_counts()
     #Mumbai Bangalore and Pune are the 3 most frequent locations of Masters students in our dataset.
@@ -315,6 +288,8 @@ def data_cleaning(original_data):
     city_num_dict = dict(zip(all_cities, num_cities))
     # city_num_dict
     original_data['current_city'] = original_data['current_city'].map(city_num_dict)
+    
+    
     #16) Open to other branch
     original_data.open_to_other_branch = original_data.open_to_other_branch.replace('Yes', 0)
     original_data.open_to_other_branch = original_data.open_to_other_branch.replace('No', 1)
@@ -327,8 +302,8 @@ def data_cleaning(original_data):
     #original_data.dtypes
     # original_data.rent_budget.value_counts()
 
-    #This code uses the errors='coerce' argument to convert non-numeric values to NaN, and then uses the replace() method to replace the NaN values with 0. 
-    #This should allow you to work with the column as a numeric column, while still preserving the non-numeric values in the DataFrame.
+    #This code uses the errors='coerce' argument to convert non-numeric values to NaN,
+    # and then uses the replace() method to replace the NaN values with 0. 
     original_data.rent_budget = pd.to_numeric(original_data.rent_budget, errors='coerce')
     original_data.rent_budget = original_data.rent_budget.replace(np.nan, 0)
     original_data.rent_budget = pd.to_numeric(original_data.rent_budget)
@@ -488,24 +463,21 @@ new_data = {
 'food_pref': Food_pref_input,
 'cul_skills' : cul_skills_input}
 
-
 original_data = original_data.append(new_data, ignore_index = True)
 
-# step-2 add user inputs in the data (append variables in original data)
 #og_sheet = pd.read_csv("D:\\BlueThinQ\\Streamlit\\streamlit\\Roommate Bumble\\Roommate_Bumble-main\\find_my_buddy.csv", sep='|')
 
+
+# step-2 add user inputs in the data (append variables in original data)
 og_sheet = pd.read_excel('find_my_buddy.csv.xlsx', sheet_name='Buddy Sheet')
 # og_sheet['Full Name'].drop(522)
 
-# meta_data = pd.read_csv('budd_new_22_6_18.csv', index_col= 0)
-# meta_data.columns
 # original_data = original_data.drop(index = [522]).reset_index(drop = True)
 meta_data = data_cleaning(original_data)
 
 # st.write(meta_data.shape[0])
 
 meta_data = meta_data.drop(labels=['looking_for_roommate', 'Others'], axis = 1)
-# meta_data = meta_data.drop(index = [522]).reset_index(drop = True)
 # name_list
 # meta_data
 
@@ -523,8 +495,6 @@ test_person = meta_data.iloc[[x]]
 # test_person
 
 # st.write(test_person)
-
-#meta_data[meta_data['gender'] == 0].iloc[[57]]
 
 def get_cont_cat(dataframe, var_type):
    
@@ -561,6 +531,7 @@ def get_cont_dist(person, database, metric):
         cont_distance_matrix = euclidean_distances(person_std, database_std)
         return cont_distance_matrix
 
+#hamming_distances
 
 def get_cat_dist(person, database, metric):
     
@@ -575,13 +546,11 @@ test_cat = get_cont_cat(test_person, 'cat')
 database_cat = get_cont_cat(meta_data[meta_data['gender'] == 0], 'cat')
 # get_cat_dist(test_cat.to_numpy().ravel(), database_cat.to_numpy(), 'hamming')[57]
 
-#get_cat_dist(test_cat, get_cont_cat(meta_data[meta_data['gender'] == 0], 'cat'), 'hamming')[57]
 
 test_cat_array = get_cont_cat(test_person, 'cat').to_numpy().ravel()
 database_cat_array = get_cont_cat(meta_data[meta_data['gender'] == 0], 'cat').to_numpy()
 # get_cat_dist(test_cat_array, database_cat_array, 'hamming')[57]
 
-#get_cat_dist(test_cat, get_cont_cat(meta_data, 'cat'), 'hamming')
 test_cat_array = get_cont_cat(test_person, 'cat').to_numpy().ravel()
 database_cat_array = get_cont_cat(meta_data, 'cat').to_numpy()
 # get_cat_dist(test_cat_array, database_cat_array, 'hamming')
@@ -611,7 +580,6 @@ def findRoommate(new_person, database, n_roommates, alpha, beta):
     # Create final distance matrix of weighted average
     final_dist = alpha*dist_cont + beta*dist_cat
 
-    
     # Sort the distance matrix to get top n roommates
     top_n_matches = np.argsort(final_dist)[0][1 : n_roommates + 1]
     
@@ -619,7 +587,7 @@ def findRoommate(new_person, database, n_roommates, alpha, beta):
     top_n_dict = {"index": top_n_matches.tolist(),
                   "name": [name_g[j] for j in top_n_matches]}
 
-     # Print the top n matches in index:name format
+    # Print the top n matches in index:name format
     for i in range(len(top_n_matches)):
         print(f'{top_n_matches[i]}:{name_g[top_n_matches[i]]}')
         
@@ -639,9 +607,11 @@ output_index = l['index']
 current_index = x
 new = original_data.iloc[current_index]
 
+# button to display user  data
 if st.button('Your data'):
     st.table(new)
 
+# button to display recommended roommates data
+# Display top 5 recommended roommates
 if st.button('Get Recommendation'):
     st.write(original_data.iloc[output_index].drop(labels = ['looking_for_roommate'], axis =1))
-
